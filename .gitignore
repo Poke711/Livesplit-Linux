@@ -1,0 +1,6 @@
+prefix/
+App/
+wine.AppImage
+hotkeys_bridge
+*.tmp
+*.log
