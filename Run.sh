@@ -18,8 +18,7 @@ cleanup() {
     echo "LiveSplit closed. Cleaning up background processes..."
     # Kill the hotkey bridge directly
     killall hotkeys_bridge 2>/dev/null
-    # Remove the temporary shadow config
-    rm "$HERE/App/bridge_settings.tmp" 2>/dev/null
+
     # Exit the script entirely
     exit
 }
@@ -45,13 +44,10 @@ if [ -n "$PRIMARY_KBD" ]; then
     KBD_ARG="-d $PRIMARY_KBD"
 fi
 
-# --- PART 3: CREATE SHADOW CONFIG ---
+# --- PART 3: CHECK SETTINGS ---
 if [ ! -f "$HERE/App/settings.cfg" ]; then
-    show_error "Settings file not found at App/settings.cfg\n\nPlease run LiveSplit and save your settings first."
-    exit 1
+    show_error "Settings file not found at App/settings.cfg\n\nLiveSplit will start, but global hotkeys will not work until you save your settings."
 fi
-cp "$HERE/App/settings.cfg" "$HERE/App/bridge_settings.tmp"
-sed -i 's/<GlobalHotkeysEnabled>False<\/GlobalHotkeysEnabled>/<GlobalHotkeysEnabled>True<\/GlobalHotkeysEnabled>/g' "$HERE/App/bridge_settings.tmp"
 
 # --- PART 4: START LIVESPLIT ---
 echo "Starting LiveSplit..."
@@ -65,10 +61,12 @@ LIVESPLIT_PID=$!
     sleep 4
 
     while kill -0 $LIVESPLIT_PID 2>/dev/null; do
-        # Launch the bridge
-        "$HERE/hotkeys_bridge" -s "$HERE/App/bridge_settings.tmp" $KBD_ARG
+        if [ -f "$HERE/App/settings.cfg" ]; then
+            # Launch the bridge
+            "$HERE/hotkeys_bridge" -s "$HERE/App/settings.cfg" $KBD_ARG
+        fi
 
-        # If we reach here, the bridge disconnected.
+        # If we reach here, the bridge disconnected or settings file is missing.
         # Check if LiveSplit is still open before retrying.
         if ! kill -0 $LIVESPLIT_PID 2>/dev/null; then break; fi
         sleep 2
