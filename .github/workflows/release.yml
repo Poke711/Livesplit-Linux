@@ -1,0 +1,27 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers when you push a tag like v1.0, v1.1
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: LiveSplit Linux Release ${{ github.ref_name }}
+          body: |
+            ### Instructions
+            1. Download the ZIP from assets below.
+            2. Run `sudo usermod -aG input $USER` once.
+            3. Use `Run.sh` to start.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
