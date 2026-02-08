@@ -25,3 +25,6 @@ If it doesn't start, ensure you have `zenity` installed for error popups.
 
 
 <b>I am not the owner of livesplit. Just a fellow speedrunner :)</b>
+Credits to 
+- descawed for live-split-hotkeys (https://github.com/descawed/live-split-hotkeys)
+- LiveSplit for the original application (https://github.com/LiveSplit/LiveSplit)
