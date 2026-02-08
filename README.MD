@@ -17,7 +17,11 @@ A "one-click" portable wrapper for running the Windows version of LiveSplit on L
 
 ## Troubleshooting
 If it doesn't start, ensure you have `zenity` installed for error popups.
-If your hotkeys don't work, ensure you have `input` group. Also ensure you restart the application after any hotkey changes (A fix is coming soon).
+
+### My hotkeys don't work
+1. Ensure you have added yourself to the `input` group. You can do this by running `sudo usermod -aG input $USER` (Then log out and back in).
+2. Try restarting your computer if logging out didn't work.
+3. Ensure you restart the application after any hotkey changes (A fix is coming soon).
 
 
-### I am not the owner of livesplit. Just a fellow speedrunner :)
+<b>I am not the owner of livesplit. Just a fellow speedrunner :)</b>
