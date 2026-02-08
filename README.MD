@@ -23,6 +23,7 @@ If it doesn't start, ensure you have `zenity` installed for error popups.
 2. Try restarting your computer if logging out didn't work.
 3. Ensure you restart the application after any hotkey changes (A fix is coming soon).
 
+## The download is large due to the packaging of wine within it. This wine is preconfigured with the libraries needed to run livesplit properly
 
 <b>I am not the owner of livesplit. Just a fellow speedrunner :)</b>
 Credits to 
