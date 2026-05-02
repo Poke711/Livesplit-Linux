@@ -27,7 +27,7 @@ trap cleanup EXIT
 
 # --- CONFIGURATION ---
 export WINEPREFIX="$HERE/prefix"
-export WINEDLLOVERRIDES="winemenubuilder.exe=d"
+export WINEDLLOVERRIDES="winemenubuilder.exe=d;gdiplus=n,b;winhttp=n,b;msxml6=n,b"
 export FREETYPE_PROPERTIES="truetype:interpreter-version=35"
 
 # --- PART 1: CHECK PERMISSIONS ---
@@ -38,16 +38,45 @@ if ! groups | grep -q "\binput\b"; then
 fi
 
 # --- PART 2: KEYBOARD AUTO-DETECTION ---
-PRIMARY_KBD=$(ls /dev/input/by-path/*-event-kbd 2>/dev/null | head -n 1)
-KBD_ARG=""
-if [ -n "$PRIMARY_KBD" ]; then
-    KBD_ARG="-d $PRIMARY_KBD"
-fi
+# Collect every keyboard device. by-path exposes the same device under both
+# -usb- and -usbv2- aliases, so dedupe by resolved real path.
+KBD_ARGS=()
+declare -A SEEN_KBD
+for link in /dev/input/by-path/*-event-kbd; do
+    [ -e "$link" ] || continue
+    real=$(readlink -f "$link")
+    if [ -z "${SEEN_KBD[$real]}" ]; then
+        SEEN_KBD[$real]=1
+        KBD_ARGS+=(-d "$real")
+    fi
+done
 
 # --- PART 3: CHECK SETTINGS ---
 if [ ! -f "$HERE/App/settings.cfg" ]; then
     show_error "Settings file not found at App/settings.cfg\n\nLiveSplit will start, but global hotkeys will not work until you save your settings."
 fi
+
+# --- PART 3.5: REMOVE STALE OSVERSION OVERRIDE ---
+# Older builds of this script forced OSVersion=winxp per-app to dodge a Save
+# dialog crash under Wine. That override breaks the WinForms FormClosing event
+# chain, so RecentSplits / RecentLayouts / window size / GlobalHotkeysEnabled
+# never get persisted on exit. Newer Wine handles IFileDialog correctly, so
+# strip the override if a previous run installed it.
+"$HERE/wine.AppImage" reg delete 'HKCU\Software\Wine\AppDefaults\LiveSplit.exe' \
+    /v Version /f >/dev/null 2>&1
+
+# Populate the user profile with symlinks to the host home so the save dialog
+# can enumerate Desktop/Documents/etc. and saves land somewhere the user expects.
+PROFILE_DIR="$HERE/prefix/drive_c/users/$USER"
+mkdir -p "$PROFILE_DIR"
+for d in Desktop Documents Downloads Pictures Music Videos; do
+    [ -e "$PROFILE_DIR/$d" ] && continue
+    if [ -d "$HOME/$d" ]; then
+        ln -sfn "$HOME/$d" "$PROFILE_DIR/$d"
+    else
+        mkdir -p "$PROFILE_DIR/$d"
+    fi
+done
 
 # --- PART 4: START LIVESPLIT ---
 echo "Starting LiveSplit..."
@@ -58,12 +87,12 @@ LIVESPLIT_PID=$!
 # This loop handles the connection to the TCP server
 (
     # Give LiveSplit time to initialize
-    sleep 4
+    sleep 1
 
     while kill -0 $LIVESPLIT_PID 2>/dev/null; do
         if [ -f "$HERE/App/settings.cfg" ]; then
             # Launch the bridge
-            "$HERE/hotkeys_bridge" -s "$HERE/App/settings.cfg" $KBD_ARG
+            "$HERE/hotkeys_bridge" -s "$HERE/App/settings.cfg" "${KBD_ARGS[@]}"
         fi
 
         # If we reach here, the bridge disconnected or settings file is missing.
